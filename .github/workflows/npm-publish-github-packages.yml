@@ -1,0 +1,174 @@
+# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
+# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+
+name: Node.js Package
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm test
+
+  publish-gpr:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com/
+      - run: npm ci
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+# Uso seguro de pull_request_target
+
+Obtenga información sobre los riesgos de seguridad del pull_request_target evento.
+
+Esta guía le ayuda a evaluar si el flujo de trabajo debe usar el `pull_request_target` evento y comprender los riesgos de seguridad implicados. También se explican las protecciones que GitHub se aplican a estos riesgos de forma predeterminada y cómo rechazar esas protecciones si es necesario.
+
+## Riesgos de `pull_request_target`
+
+Los flujos de trabajo activados por `pull_request_target` se ejecutan con un nivel de confianza elevado: el trabajo recibe el `GITHUB_TOKEN` del repositorio base y acceso a los secretos del repositorio y de la organización. Esta es la misma confianza que se otorga a eventos como los de tipo `push`, que solo los colaboradores pueden desencadenar, y es lo que hace que `pull_request_target` sea útil para la automatización que responde a pull requests desde forks, como el etiquetado, el triaje o la publicación de comprobaciones de estado autenticadas.
+
+Para comprender por qué esto es seguro de forma predeterminada y cómo se interrumpe normalmente esa seguridad, revise `pull_request_target` en [`pull_request`](/es/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+
+El `pull_request` evento (junto con `pull_request_review` y `pull_request_review_comment`) es inusual: ejecuta el archivo de flujo de trabajo desde la **confirmación de combinación de la solicitud de incorporación de cambios**. Para una solicitud de incorporación de cambios abierta desde una bifurcación, esa confirmación se controla mediante alguien sin acceso de escritura al repositorio base. Para ejecutar de forma segura código de flujo de trabajo no fiable, GitHub restringe estos eventos a un `GITHUB_TOKEN` de solo lectura, impide el acceso a otros secretos y aplica políticas de aprobación para bifurcaciones a fin de evitar el abuso de recursos de cómputo. De forma predeterminada, `actions/checkout` en un flujo de trabajo de `pull_request` también extrae el commit de fusión de la solicitud de extracción, por lo que el código extraído y el flujo de trabajo que se ejecuta son coherentes.
+
+`pull_request_target` introduce un cambio sutil pero importante: el flujo de trabajo y cualquier llamada posterior a `actions/checkout` que no especifique un `ref` se toman de la **rama predeterminada del repositorio base**, no de la solicitud de extracción. Dado que solo se ejecuta código de confianza de la rama predeterminada, es seguro conceder secretos y un token de lectura y escritura. No se ejecuta ningún código de la bifurcación de forma predeterminada.
+
+Se introduce un riesgo cuando un autor de un flujo de trabajo anula este valor predeterminado para ejecutar el código de la bifurcación. Los desarrolladores suelen elegir `pull_request_target` porque quieren ejecutar la pull request de un fork en CI *y* tener acceso a secretos, por ejemplo, para ejecutar pruebas que necesitan un registro privado. Para ello, apuntan `actions/checkout` al encabezado de la solicitud de incorporación de cambios en lugar de a la rama predeterminada, que no es segura:
+
+```yaml
+# INSECURE. Provided as an example only.
+on:
+  pull_request_target:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Test
+        run: make test
+```
+
+El paso de checkout por sí solo no ejecuta código no confiable. El propio archivo de flujo de trabajo sigue viniendo de la rama predeterminada. La vulnerabilidad se completa con el *siguiente* paso, que ejecuta el código extraído en el directorio de trabajo actual. Aquí, `make test` ejecuta un `Makefile` elemento tomado del encabezado de solicitud de incorporación de cambios. Un atacante solo necesita abrir una solicitud de extracción desde un fork cuyo `Makefile` (o script de compilación, comando de prueba, dependencia o archivo de configuración) contenga comandos maliciosos. A continuación, esos comandos se ejecutan con los secretos y el token del repositorio base.
+
+Este patrón se conoce como "pwn request" y ha sido la causa raíz de múltiples compromisos de la cadena de suministro. Para obtener más información, vea [Impedir solicitudes pwn](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/) de GitHub Security Lab. Entre las formas vulnerables comunes se incluyen las siguientes:
+
+* Extraer el HEAD o el commit de combinación de una solicitud de extracción en `actions/checkout` (`ref: ${{ github.event.pull_request.head.sha }}`, `ref: refs/pull/${{ github.event.pull_request.number }}/merge`) y luego compilar, probar o ejecutar de otro modo el resultado.
+* Establecer `repository:` en la bifurcación (`repository: ${{ github.event.pull_request.head.repo.full_name }}`) para extraer directamente la rama de la bifurcación.
+* Obtener el código de la pull request fuera de `actions/checkout` (por ejemplo, con `git fetch`, `gh pr checkout` o descargando un artefacto de la ejecución de `pull_request` de una bifurcación) y luego ejecutarlo.
+
+Las solicitudes pwn tampoco son exclusivas de `pull_request_target`. Cualquier evento que se ejecute con secretos puede dar lugar a una vulneración si extrae o descarga y ejecuta código no fiable. Por ejemplo, un flujo de trabajo de `issue_comment` o `workflow_run` que obtiene y ejecuta el código de una solicitud de extracción de un fork es vulnerable de la misma manera. Un `workflow_run` flujo de trabajo debe tratar los artefactos cargados por otros flujos de trabajo como datos que no son de confianza, ya que su contenido puede provenir de una bifurcación.
+
+## Directiva predeterminada para `pull_request_target`
+
+Para ayudar a proteger sus flujos de trabajo frente a solicitudes de extracción no fiables, GitHub proporciona una política de eventos predeterminada que bloquea el evento `pull_request_target` en los repositorios públicos.
+
+### Funcionamiento de la directiva predeterminada
+
+En el caso de los repositorios públicos que aún no tienen una directiva de eventos actions aplicable, GitHub agrega una directiva predeterminada que bloquea los flujos de trabajo desencadenados por `pull_request_target`. Para obtener más información sobre las directivas, consulte [Información sobre las políticas de Actions](/es/actions/concepts/about-actions-policies).
+
+<!-- expires 2026-12-02 -->
+
+<!-- default policy flips to active -->
+
+La política predeterminada:
+
+* No se aplica a repositorios privados o internos.
+* No reemplaza una directiva de eventos aplicable que ya ha configurado.
+* Actualmente se ejecuta en modo **de evaluación** . En este modo, las ejecuciones del flujo de trabajo continúan, pero puede usar la información de las directivas para identificar las ejecuciones que se bloquearían una vez aplicada la directiva.
+
+El 2 de diciembre de 2026, GitHub aplicará la directiva predeterminada para los repositorios afectados que estaban usando la directiva predeterminada `pull_request_target` antes de la disponibilidad general.
+
+<!-- end expires 2026-12-02 -->
+
+### Revisión del impacto antes de la aplicación
+
+Mientras la directiva está en modo de evaluación, revise la información detallada de la directiva para identificar los flujos de trabajo que usan `pull_request_target` y que se bloquearían cuando se aplique la directiva.
+
+Para cada flujo de trabajo afectado, decida si `pull_request_target` sigue siendo necesario:
+
+* Si el flujo de trabajo no necesita `pull_request_target`, actualícelo para usar un evento más seguro cuando corresponda, como `pull_request`.
+* Si el flujo de trabajo debe seguir usando `pull_request_target`, cree o actualice una directiva de eventos de Actions aplicable que permita explícitamente `pull_request_target`.
+* Si no desea permitir `pull_request_target`, deje vigente la política predeterminada. Después del cumplimiento, GitHub bloqueará los flujos de trabajo desencadenados por ese evento.
+
+> [!WARNING]
+> `pull_request_target` Permitir solo cuando sea necesario. Los flujos de trabajo desencadenados por este evento no deben extraer, compilar ni ejecutar código desde una solicitud de extracción no confiable con acceso a secretos del repositorio o a un `GITHUB_TOKEN` con privilegios.
+
+Para obtener más información sobre cómo configurar directivas de eventos y ver información, consulte [Gobernanza de la ejecución de flujos de GitHub Actions trabajo](/es/actions/how-tos/administer/control-workflow-execution). Para administrar directivas mediante programación, consulte [Puntos de conexión de la API REST para las políticas de Acciones de GitHub](/es/rest/actions/policies).
+
+## Decidir si se va a usar `pull_request_target`
+
+Algunos flujos de trabajo necesitan hacer checkout del código de un pull request de un fork con un nivel de confianza elevado, y por eso se creó `pull_request_target` en primer lugar. Por ejemplo, generar informes de cobertura que requieran un registro privado de artefactos o producir y ejecutar verificaciones autenticadas de los cambios introducidos en la pull request. Considere las siguientes preguntas antes de usar `pull_request_target` o activar el indicador `allow-unsafe-pr-checkout` en `actions/checkout`.
+
+* **¿Puede usar `pull_request` en su lugar?**
+  `pull_request` se activa con los mismos eventos que `pull_request_target` y ejecuta el código del flujo de trabajo desde la rama de combinación `pull_request`. Esto se realiza de forma segura en las solicitudes de extracción de bifurcaciones con las protecciones detalladas anteriormente. Si no se necesita acceso a secretos adicionales, use `pull_request`. Los flujos de trabajo más complejos pueden reestructurarse para separar el manejo potencialmente peligroso del código de las solicitudes de extracción del acceso a secretos. Para obtener más información, vea [Impedir solicitudes pwn](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/#preventing-pwn-requests) de GitHub Security Lab.
+
+* **¿Se ejecuta alguna vez el código extraído?** Este es el fallo que introduce vulnerabilidades de solicitudes pwn. Normalmente, se introduce con `actions/checkout` extrayendo la cabecera de una solicitud de incorporación de cambios al directorio de trabajo y ejecutándola a continuación. A menos que se configure la entrada `path`, `actions/checkout` escribe el código en el directorio `$GITHUB_WORKSPACE`, que suele ser el directorio de trabajo donde se ejecutan los comandos siguientes. La ejecución no se limita a sus propios pasos: los comandos de compilación y prueba, como `npm install` y `npm run build`, así como los archivos de configuración y las dependencias que aporta el código, pueden ejecutar código controlado por atacantes. La ejecución no requiere un paso de compilación obvio.
+  **Debe asegurarse de que el código extraído se examine únicamente como datos y nunca se ejecute antes de usar un evento `pull_request_target`**.
+
+## Refuerzo de un flujo de trabajo `pull_request_target`
+
+Si ha confirmado que necesita `pull_request_target`, aplique estos controles para limitar el impacto de este evento de alto riesgo. Se aplican si el flujo de trabajo comprueba o no el código de solicitud de incorporación de cambios.
+
+* **Restringir secretos.** Confirme que los permisos establecidos en `GITHUB_TOKEN` tienen los privilegios mínimos y que solo se usan los secretos de la organización y del repositorio necesarios para el flujo de trabajo. Para obtener más información, vea [Uso de GITHUB\_TOKEN para la autenticación en flujos de trabajo](/es/actions/tutorials/authenticate-with-github_token#modifying-the-permissions-for-the-github_token).
+
+* **Comprenda el impacto en el almacenamiento en caché.** Para reducir el riesgo de intoxicación de caché, los flujos de trabajo desencadenados por `pull_request_target` tienen acceso de solo lectura a la memoria caché en el ámbito de la rama predeterminada. Estos flujos de trabajo pueden restaurar entradas de caché existentes, pero no pueden crearlas ni sobrescribirlas, por lo que no pueden afectar a la ejecución de otros flujos de trabajo, no relacionados, a través de la caché compartida. Si este flujo de trabajo intenta guardar una memoria caché, se produce un error en el guardado, pero el paso y el trabajo continúan, y el error se notifica como una advertencia en el registro de flujo de trabajo. Si su flujo de trabajo necesita poblar la caché, guárdela desde un flujo de trabajo que se ejecute con un activador de confianza, como `push`. Un flujo de trabajo o una tarea puede quedar exento de esta restricción de solo lectura declarando explícitamente un permiso con capacidad de escritura `cache-mode`, pero hacerlo en un flujo de trabajo `pull_request_target` vuelve a introducir el riesgo de envenenamiento de caché que esta restricción está diseñada para evitar. Para obtener más información, vea [Referencia de almacenamiento en caché de dependencias](/es/actions/reference/workflows-and-actions/dependency-caching#cache-access-for-low-trust-workflow-triggers).
+
+* **Asegúrese de que el proceso subyacente está aislado y efímero.** Si se usan ejecutores autohospedados, debe confirmar que el entorno del ejecutor está correctamente restringido de los recursos internos y no se reutiliza entre GitHub Actions ejecuciones. Para obtener más información, vea [Referencia de uso seguro](/es/actions/reference/security/secure-use#hardening-for-self-hosted-runners).
+
+* **Aplique los GitHub Actions procedimientos recomendados de seguridad.** Además de los riesgos específicos de las solicitudes pwn, pueden existir otras vulnerabilidades comunes, como la inyección de comandos, y afectar al código ejecutado en este evento con privilegios. Para obtener más información, consulte [Mantener la seguridad de Acciones de GitHub y los flujos de trabajo: entrada no fiable](https://securitylab.github.com/resources/github-actions-untrusted-input/) de GitHub Security Lab. Para identificar y proteger proactivamente frente a vulnerabilidades comunes GitHub Actions , habilite CodeQL para GitHub Actions. Para obtener más información, vea [Establecimiento de la configuración predeterminada para el examen del código](/es/code-security/how-tos/find-and-fix-code-vulnerabilities/configure-code-scanning/configure-code-scanning).
+
+## Desactivar las protecciones integradas
+
+Si ha revisado las preguntas anteriores y ha confirmado que su flujo de trabajo requiere `pull_request_target` y lo usa de forma segura, puede excluirse de la directiva predeterminada de eventos
+y de la protección `actions/checkout`.
+
+Establecer `allow-unsafe-pr-checkout: true` como una entrada `actions/checkout` permite hacer checkout de las refs de HEAD de pull requests desde forks. Solo haga esto después de confirmar que el código extraído nunca se ejecuta. La entrada se denomina intencionadamente para ser fácil de detectar en la revisión de código y el análisis estático.
+
+Esta protección solo cubre las referencias de las solicitudes de extracción de las bifurcaciones. Extraer otro código que no es de confianza, como un repositorio de terceros no relacionado, obtener código con `git fetch` o `gh pr checkout`, o ejecutar un artefacto descargado, no está cubierto por las comprobaciones de `actions/checkout`.
+- name: Setup Node.js environment
+  uses: actions/setup-node@v7.1.0
+  with:
+    # Version Spec of the version to use. Examples: 12.x, 10.15.1, >=10.15.0.
+    node-version: # optional
+    # File containing the version Spec of the version to use.  Examples: package.json, .nvmrc, .node-version, .tool-versions, mise.toml.
+    node-version-file: # optional
+    # Target architecture for Node to use. Examples: x86, x64. Will use system architecture by default.
+    architecture: # optional
+    # Set this option if you want the action to check for the latest available version that satisfies the version spec.
+    check-latest: # optional
+    # Optional registry to set up for auth. Will set the registry in a project level .npmrc and .yarnrc file, and set up auth to read in from env.NODE_AUTH_TOKEN.
+    registry-url: # optional
+    # Optional scope for authenticating against scoped registries. Will fall back to the repository owner when using the GitHub Packages registry (https://npm.pkg.github.com/).
+    scope: # optional
+    # Used to pull node distributions from node-versions. Since there's a default, this is typically not supplied by the user. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
+    token: # optional, default is ${{ github.server_url == 'https://github.com' && github.token || '' }}
+    # Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm.
+    cache: # optional
+    # Set to false to disable automatic caching. By default, caching is enabled when either devEngines.packageManager or the top-level packageManager field in package.json specifies npm as the package manager.
+    package-manager-cache: # optional, default is true
+    # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.
+    cache-dependency-path: # optional
+    # Used to specify an alternative mirror to download Node.js binaries from
+    mirror: # optional
+    # The token used as Authorization header when fetching from the mirror
+    mirror-token: # optional
