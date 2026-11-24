@@ -1,0 +1,111 @@
+# These are supported funding model platforms
+
+github: # Replace with up to 4 GitHub Sponsors-enabled usernames e.g., [user1, user2]
+patreon: # Replace with a single Patreon username
+open_collective: # Replace with a single Open Collective username
+ko_fi: # Replace with a single Ko-fi username
+tidelift: # Replace with a single Tidelift platform-name/package-name e.g., npm/babel
+community_bridge: # Replace with a single Community Bridge project-name e.g., cloud-foundry
+liberapay: # Replace with a single Liberapay username
+issuehunt: # Replace with a single IssueHunt username
+lfx_crowdfunding: # Replace with a single LFX Crowdfunding project-name e.g., cloud-foundry
+polar: # Replace with a single Polar username
+buy_me_a_coffee: # Replace with a single Buy Me a Coffee username
+thanks_dev: # Replace with a single thanks.dev username
+custom: # Replace with up to 4 custom sponsorship URLs e.g., ['link1', 'link2']
+# Mostrando un botón de patrocinador en tu repositorio
+
+Puede agregar un botón de patrocinador en el repositorio para aumentar la visibilidad de las opciones de financiación del proyecto de open source.
+
+## Acerca de los archivos FUNDING
+
+Puede configurar el botón de patrocinador si edita un archivo `FUNDING.yml` en la carpeta `.github` del repositorio, en la rama predeterminada. Puedes configurar el botón para que incluya programadores patrocinados en GitHub Sponsors, plataformas de financiamiento externo o URL de financiamiento personalizadas. Para más información sobre GitHub Sponsors, consulta [Acerca de los patrocinadores de GitHub](/es/sponsors/getting-started-with-github-sponsors/about-github-sponsors).
+
+Puedes agregar un nombre de usuario, un nombre de paquete o un nombre de proyecto por plataforma de financiamiento externo y hasta cuatro URL personalizadas. Puede añadir una organización y hasta cuatro desarrolladores patrocinadores en GitHub Sponsors. Agrega cada plataforma en una línea nueva, usando la siguiente sintaxis:
+
+| Plataforma | Sintaxis |
+| ---------- | -------- |
+
+[LFX Mentorship (antes CommunityBridge)](https://lfx.linuxfoundation.org/tools/mentorship) | `community_bridge: PROJECT-NAME`
+
+[GitHub Sponsors](https://github.com/sponsors) |
+`github: USERNAME` o `github: [USERNAME, USERNAME, USERNAME, USERNAME]`
+
+[IssueHunt](https://issuehunt.io/) | `issuehunt: USERNAME`
+
+[Ko-fi](https://ko-fi.com/) | `ko_fi: USERNAME`
+
+[Liberapay](https://en.liberapay.com/) | `liberapay: USERNAME`
+
+[Open Collective](https://opencollective.com/) | `open_collective: USERNAME`
+
+[Patreon](https://www.patreon.com/) | `patreon: USERNAME`
+
+[Tidelift](https://tidelift.com/) | `tidelift: PLATFORM-NAME/PACKAGE-NAME`
+
+[Polar](https://www.polar.sh/) | `polar: USERNAME`
+
+[Comprarme un café](https://www.buymeacoffee.com/) | `buy_me_a_coffee: USERNAME`
+
+[thanks.dev](https://thanks.dev/) | `thanks_dev: u/gh/USERNAME`
+Dirección URL personalizada |
+`custom: LINK1` o `custom: [LINK1, LINK2, LINK3, LINK4]`
+
+Para Tidelift, usa la sintaxis `platform-name/package-name` con los siguientes nombres de plataforma:
+
+| Idioma     | Nombre de la plataforma. |
+| ---------- | ------------------------ |
+| JavaScript | `npm`                    |
+| Python     | `pypi`                   |
+| Ruby       | `rubygems`               |
+| Java       | `maven`                  |
+| PHP        | `packagist`              |
+| C#         | `nuget`                  |
+
+Este es un archivo `FUNDING.yml` de ejemplo:
+
+```yaml
+github: [octocat, surftocat]
+patreon: octocat
+tidelift: npm/octo-package
+custom: ["https://www.paypal.me/octocat", octocat.com]
+```
+
+> [!NOTE]
+> Si una dirección URL personalizada de una matriz incluye `:`, debes encerrar la dirección URL entre comillas. Por ejemplo, `"https://www.paypal.me/octocat"`.
+
+Puedes crear un botón de patrocinador predeterminado para tu organización o cuenta personal. Para más información, consulta [Creación de un archivo predeterminado de mantenimiento de la comunidad](/es/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file).
+
+> [!NOTE]
+> Los enlaces de financiación proporcionan una manera para que los proyectos de código abierto reciban apoyo financiero directo de su comunidad. El uso de enlaces de financiamiento para otros fines, como la publicidad o el apoyo a grupos solidarios, comunitarios o políticos no está admitido. Si tienes consultas acerca de si los fines con que deseas usar estos enlaces están admitidos, ve a [Soporte de GitHub](https://support.github.com).
+
+## Mostrando un botón de patrocinador en tu repositorio
+
+Cualquier usuario que cuente con permisos de administración puede habilitar un botón de patrocinador en un repositorio.
+
+1. En GitHub, navegue hasta la página principal del repositorio.
+
+2. Debajo del nombre del repositorio, haz clic en **<svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-gear" aria-label="gear" role="img"><path d="M8 0a8.2 8.2 0 0 1 .701.031C9.444.095 9.99.645 10.16 1.29l.288 1.107c.018.066.079.158.212.224.231.114.454.243.668.386.123.082.233.09.299.071l1.103-.303c.644-.176 1.392.021 1.82.63.27.385.506.792.704 1.218.315.675.111 1.422-.364 1.891l-.814.806c-.049.048-.098.147-.088.294.016.257.016.515 0 .772-.01.147.038.246.088.294l.814.806c.475.469.679 1.216.364 1.891a7.977 7.977 0 0 1-.704 1.217c-.428.61-1.176.807-1.82.63l-1.102-.302c-.067-.019-.177-.011-.3.071a5.909 5.909 0 0 1-.668.386c-.133.066-.194.158-.211.224l-.29 1.106c-.168.646-.715 1.196-1.458 1.26a8.006 8.006 0 0 1-1.402 0c-.743-.064-1.289-.614-1.458-1.26l-.289-1.106c-.018-.066-.079-.158-.212-.224a5.738 5.738 0 0 1-.668-.386c-.123-.082-.233-.09-.299-.071l-1.103.303c-.644.176-1.392-.021-1.82-.63a8.12 8.12 0 0 1-.704-1.218c-.315-.675-.111-1.422.363-1.891l.815-.806c.05-.048.098-.147.088-.294a6.214 6.214 0 0 1 0-.772c.01-.147-.038-.246-.088-.294l-.815-.806C.635 6.045.431 5.298.746 4.623a7.92 7.92 0 0 1 .704-1.217c.428-.61 1.176-.807 1.82-.63l1.102.302c.067.019.177.011.3-.071.214-.143.437-.272.668-.386.133-.066.194-.158.211-.224l.29-1.106C6.009.645 6.556.095 7.299.03 7.53.01 7.764 0 8 0Zm-.571 1.525c-.036.003-.108.036-.137.146l-.289 1.105c-.147.561-.549.967-.998 1.189-.173.086-.34.183-.5.29-.417.278-.97.423-1.529.27l-1.103-.303c-.109-.03-.175.016-.195.045-.22.312-.412.644-.573.99-.014.031-.021.11.059.19l.815.806c.411.406.562.957.53 1.456a4.709 4.709 0 0 0 0 .582c.032.499-.119 1.05-.53 1.456l-.815.806c-.081.08-.073.159-.059.19.162.346.353.677.573.989.02.03.085.076.195.046l1.102-.303c.56-.153 1.113-.008 1.53.27.161.107.328.204.501.29.447.222.85.629.997 1.189l.289 1.105c.029.109.101.143.137.146a6.6 6.6 0 0 0 1.142 0c.036-.003.108-.036.137-.146l.289-1.105c.147-.561.549-.967.998-1.189.173-.086.34-.183.5-.29.417-.278.97-.423 1.529-.27l1.103.303c.109.029.175-.016.195-.045.22-.313.411-.644.573-.99.014-.031.021-.11-.059-.19l-.815-.806c-.411-.406-.562-.957-.53-1.456a4.709 4.709 0 0 0 0-.582c-.032-.499.119-1.05.53-1.456l.815-.806c.081-.08.073-.159.059-.19a6.464 6.464 0 0 0-.573-.989c-.02-.03-.085-.076-.195-.046l-1.102.303c-.56.153-1.113.008-1.53-.27a4.44 4.44 0 0 0-.501-.29c-.447-.222-.85-.629-.997-1.189l-.289-1.105c-.029-.11-.101-.143-.137-.146a6.6 6.6 0 0 0-1.142 0ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9.5 8a1.5 1.5 0 1 0-3.001.001A1.5 1.5 0 0 0 9.5 8Z"></path></svg> Settings**. Si no puedes ver la pestaña "Configuración", selecciona el menú desplegable **<svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-kebab-horizontal" aria-label="More" role="img"><path d="M8 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path></svg>** y, a continuación, haz clic en **Configuración**.
+
+   ![Captura de pantalla de un encabezado de repositorio en el que se muestran las pestañas. La pestaña "Configuración" está resaltada con un contorno naranja oscuro.](/assets/images/help/repository/repo-actions-settings.png)
+
+3. En la página de configuración "General", en la sección "Características", selecciona **Patrocinios**.
+
+4. En el cuadro "Patrocinios", haz clic en el botón **Configurar patrocinador** o **Invalidar vínculos de financiación**.
+
+5. En el editor de archivos, siga la instrucciones del archivo `FUNDING.yml` para agregar vínculos a las ubicaciones de financiación.
+
+6. Haga clic en **Confirmar cambios**.
+
+7. En el campo de "Mensaje de confirmación", escriba un mensaje de confirmación corto y significativo que describa la modificación que hizo en el archivo. Puedes atribuir el cambio a mas de un autor en el mensaje del mismo. Para más información, consulta [Creación de un commit con varios autores o en nombre de una organización](/es/pull-requests/how-tos/commit-changes/creating-a-commit-with-multiple-authors).
+
+8. Debajo de los campos para el mensaje de confirmación, decide si deseas agregar tu confirmación a la rama actual o a una rama nueva. Debajo de los campos del mensaje de confirmación, decide si deseas agregar tu confirmación a la rama actual o a una nueva rama. Si tu rama actual es la rama predeterminada, debes elegir crear una nueva rama para tu confirmación y después crear una solicitud de extracción. Para más información, consulta [Crear una solicitud de incorporación de cambios](/es/pull-requests/how-tos/create-pull-requests/creating-a-pull-request).
+
+   ![Captura de pantalla de una solicitud de extracción de GitHub que muestra un botón de opción para hacer la confirmación directamente en la rama principal o para crear una nueva rama. Aparece seleccionada la opción de rama nueva.](/assets/images/help/repository/choose-commit-branch.png)
+
+9. Haz clic en **Confirmar cambios** o **Proponer cambios**.
+
+## Información adicional
+
+* [Acerca de los patrocinadores de GitHub para colaboradores de open source](/es/sponsors/receiving-sponsorships-through-github-sponsors/about-github-sponsors-for-open-source-contributors)
+* [Preguntas más frecuentes con el equipo de GitHub Sponsors](https://github.blog/2019-06-12-faq-with-the-github-sponsors-team/) en the GitHub Blog
